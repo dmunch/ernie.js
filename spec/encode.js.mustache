@@ -1,0 +1,19 @@
+//ATTENTION
+//ATTENTION: These are auto-generated specs based on ../specs.config and encode.js.mustache
+//ATTENTION
+
+var Bert = require('../');
+
+//polyfill with NPM text-encoding
+if(!TextEncoder) {
+  var TextEncoder = require('text-encoding').TextEncoder;
+}
+
+describe("A suite", function() {
+  {{ #tests }}
+  it("{{ desc }}", function() {
+    var encoder = new Bert.Encoder(new TextEncoder());
+    expect(Array.from(encoder.encode(eval(" {{ json }} ")))).toEqual({{ erl }});
+  });
+  {{ /tests }}
+});

@@ -1,0 +1,138 @@
+//ATTENTION
+//ATTENTION: These are auto-generated specs based on ../specs.config and decode.js.mustache
+//ATTENTION
+
+var Bert = require('../');
+
+//polyfill with NPM text-encoding
+if(!TextDecoder) {
+  var StringDecoder = require('string_decoder').StringDecoder;
+
+  var TextDecoder = function() {
+    this.decoder = new StringDecoder('utf8');
+    this.decode = function(buffer) {
+      var b = Buffer.from(buffer);
+      return this.decoder.write(b);
+    }
+  };
+}
+
+describe("A suite", function() {
+  {{ #tests }}
+  it("{{ desc }}", function() {
+    var decoder = new Bert.Decoder(new TextDecoder());
+    expect(decoder.decode(new Uint8Array({{ erl }}))).toEqual(eval(" {{ json }} "));
+  });
+  {{ /tests }}
+});
+
+describe("stream decoding a single term", function() {
+  {{ #tests }}
+  it("{{ desc }}", function() {
+    var decoder = new Bert.Decoder(new TextDecoder());
+    var buffer = new Uint8Array({{ erl }});
+
+    var chunkSize = Math.floor(buffer.length / 3);
+    var chunk1 = buffer.subarray(0,chunkSize); 
+    var chunk2 = buffer.subarray(chunkSize, chunkSize * 2); 
+    var chunk3 = buffer.subarray(chunkSize * 2, buffer.length);
+    
+    decoder.nextBuffer(chunk1);
+    var val1 = decoder.decodeNext();
+    
+    decoder.nextBuffer(chunk2);
+    var val2 = decoder.decodeNext();
+
+    decoder.nextBuffer(chunk3);
+    var val = decoder.decodeNext();
+    
+    expect(val.value).toEqual(eval(" {{ json }} "));
+  });
+  {{ /tests }}
+});
+
+describe("stream decoding multiple terms", function() {
+  it("should decode multiple terms from one stream", function() {
+    var decoder = new Bert.Decoder(new TextDecoder());
+    var buffers = [
+    {{ #tests }}
+      new Uint8Array({{ erl }}),
+    {{ /tests }}
+    ];
+
+    var sum = 0;
+    for(var i = 0; i < buffers.length; i++) {
+      sum += buffers[i].length;  
+    }
+    var buffer = new Uint8Array(sum);
+    var offset = 0;
+    for(var i = 0; i < buffers.length; i++) {
+      buffer.set(buffers[i], offset);
+      offset += buffers[i].length;  
+    }
+
+    {{ #tests }}
+    expect(decoder.decode(buffer, true)).toEqual(eval(" {{ json }} "));
+    {{ /tests }}
+  });
+});
+
+describe("stream decoding multiple terms chunked", function() {
+  it("should decode multiple terms from one stream", function() {
+    var decoder = new Bert.Decoder(new TextDecoder());
+    var buffers = [
+    {{ #tests }}
+      new Uint8Array({{ erl }}),
+    {{ /tests }}
+    ];
+    
+    var assertions = [
+    {{ #tests }}
+      eval(" {{ json }} "),
+    {{ /tests }}
+    ];
+
+    var sum = 0;
+    for(var i = 0; i < buffers.length; i++) {
+      sum += buffers[i].length;  
+    }
+    var buffer = new Uint8Array(sum);
+    var offset = 0;
+    for(var i = 0; i < buffers.length; i++) {
+      buffer.set(buffers[i], offset);
+      offset += buffers[i].length;  
+    }
+
+ 
+    var n = 115; 
+    var chunkSize = Math.floor(buffer.length / n);
+    //console.log("chunksize " + chunkSize + " l " + buffer.length);
+    var chunks = [];
+    for(var i = 0; i < n; i++) {
+      var sub = buffer.subarray(i * chunkSize, i == n-1 ? buffer.length : (i + 1) * chunkSize);     
+      chunks.push(sub);
+    }
+   
+    var val;
+    var c = 0;
+    var a = 0;
+    var chunk = chunks[c];
+    decoder.nextBuffer(chunk);
+
+    {{ #tests }}
+    
+    do {
+      val = decoder.decodeNext();
+      if(val.value) {
+        expect(val.value).toEqual(assertions[a++]);
+      } else 
+      {
+        chunk = chunks[++c];
+        decoder.nextBuffer(chunk);
+      }
+    }
+    while(c < n);
+    
+    {{ /tests }}
+  });
+});

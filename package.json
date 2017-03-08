@@ -1,0 +1,16 @@
+{
+  "name": "ernie.js",
+  "version": "1.0.0",
+  "description": "A BERT decoder/encoder working exclusively with TypedArray",
+  "main": "index.js",
+  "scripts": {
+    "test": "./bert &&  jasmine spec/*.js",
+    "compile": "rebar compile escriptize",
+    "gentests": "npm run compile && ./bert"
+  },
+  "author": "Daniel Münch",
+  "license": "MIT",
+  "devDependencies": {
+    "jasmine": "^2.5.3"
+  }
+}
