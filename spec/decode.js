@@ -1,3 +1,7 @@
+//ATTENTION
+//ATTENTION: These are auto-generated specs based on ../specs.config and decode.js.mustache
+//ATTENTION
+
 var Bert = require('../');
 
 //polyfill with NPM text-encoding
@@ -25,6 +29,10 @@ describe("A suite", function() {
   it("should decode small int", function() {
     var decoder = new Bert.Decoder(new TextDecoder());
     expect(decoder.decode(new Uint8Array([131,97,254]))).toEqual(eval(" i = 254 "));
+  });
+  it("should decode small big int", function() {
+    var decoder = new Bert.Decoder(new TextDecoder());
+    expect(decoder.decode(new Uint8Array([131,110,5,0,0,228,11,84,2]))).toEqual(eval(" i = 10000000000 "));
   });
   it("should decode int", function() {
     var decoder = new Bert.Decoder(new TextDecoder());
@@ -124,6 +132,26 @@ describe("stream decoding a single term", function() {
     var val = decoder.decodeNext();
     
     expect(val.value).toEqual(eval(" i = 254 "));
+  });
+  it("should decode small big int", function() {
+    var decoder = new Bert.Decoder(new TextDecoder());
+    var buffer = new Uint8Array([131,110,5,0,0,228,11,84,2]);
+
+    var chunkSize = Math.floor(buffer.length / 3);
+    var chunk1 = buffer.subarray(0,chunkSize); 
+    var chunk2 = buffer.subarray(chunkSize, chunkSize * 2); 
+    var chunk3 = buffer.subarray(chunkSize * 2, buffer.length);
+    
+    decoder.nextBuffer(chunk1);
+    var val1 = decoder.decodeNext();
+    
+    decoder.nextBuffer(chunk2);
+    var val2 = decoder.decodeNext();
+
+    decoder.nextBuffer(chunk3);
+    var val = decoder.decodeNext();
+    
+    expect(val.value).toEqual(eval(" i = 10000000000 "));
   });
   it("should decode int", function() {
     var decoder = new Bert.Decoder(new TextDecoder());
@@ -314,6 +342,7 @@ describe("stream decoding multiple terms", function() {
       new Uint8Array([131,108,0,0,0,2,97,25,98,0,0,1,1,106]),
       new Uint8Array([131,107,0,2,25,250]),
       new Uint8Array([131,97,254]),
+      new Uint8Array([131,110,5,0,0,228,11,84,2]),
       new Uint8Array([131,98,0,1,226,64]),
       new Uint8Array([131,70,64,9,33,249,240,27,134,110]),
       new Uint8Array([131,109,0,0,0,4,97,115,100,102]),
@@ -339,6 +368,7 @@ describe("stream decoding multiple terms", function() {
     expect(decoder.decode(buffer, true)).toEqual(eval(" v = [25, 257] "));
     expect(decoder.decode(buffer, true)).toEqual(eval(" v = [25, 250] "));
     expect(decoder.decode(buffer, true)).toEqual(eval(" i = 254 "));
+    expect(decoder.decode(buffer, true)).toEqual(eval(" i = 10000000000 "));
     expect(decoder.decode(buffer, true)).toEqual(eval(" i = 123456 "));
     expect(decoder.decode(buffer, true)).toEqual(eval(" i = 3.14159 "));
     expect(decoder.decode(buffer, true)).toEqual(eval(" i = 'asdf' "));
@@ -358,6 +388,7 @@ describe("stream decoding multiple terms chunked", function() {
       new Uint8Array([131,108,0,0,0,2,97,25,98,0,0,1,1,106]),
       new Uint8Array([131,107,0,2,25,250]),
       new Uint8Array([131,97,254]),
+      new Uint8Array([131,110,5,0,0,228,11,84,2]),
       new Uint8Array([131,98,0,1,226,64]),
       new Uint8Array([131,70,64,9,33,249,240,27,134,110]),
       new Uint8Array([131,109,0,0,0,4,97,115,100,102]),
@@ -373,6 +404,7 @@ describe("stream decoding multiple terms chunked", function() {
       eval(" v = [25, 257] "),
       eval(" v = [25, 250] "),
       eval(" i = 254 "),
+      eval(" i = 10000000000 "),
       eval(" i = 123456 "),
       eval(" i = 3.14159 "),
       eval(" i = 'asdf' "),
@@ -411,6 +443,19 @@ describe("stream decoding multiple terms chunked", function() {
     var chunk = chunks[c];
     decoder.nextBuffer(chunk);
 
+    
+    do {
+      val = decoder.decodeNext();
+      if(val.value) {
+        expect(val.value).toEqual(assertions[a++]);
+      } else 
+      {
+        chunk = chunks[++c];
+        decoder.nextBuffer(chunk);
+      }
+    }
+    while(c < n);
+    
     
     do {
       val = decoder.decodeNext();

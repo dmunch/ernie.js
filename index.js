@@ -404,6 +404,17 @@ Decoder.prototype.resume = function(buffer, op) {
       }
       break;
     }
+    case SMALL_BIG:{
+       if(!op.digits) {
+        this.decode_small_big(buffer, op);
+        resumed = true;
+      } else if(op.current < op.length) {
+        this.decode_small_big(buffer, op);
+        resumed = true;
+      }
+      break;
+    } 
+
     case BINARY:
     case STRING: {
       if(!op.value) {
@@ -429,6 +440,13 @@ Decoder.prototype.collect = function(op) {
   switch(op.magic) {
     case LIST: {
       return this.collect_list(op);
+    }
+    case SMALL_BIG: {
+      let value = 0;
+      for(let i = 0; i < op.length; i++) {
+        value += op.digits[i] * Math.pow(256,i);
+      }
+      return value;
     }
     case LARGE_TUPLE: 
     case SMALL_TUPLE: {
@@ -535,6 +553,11 @@ Decoder.prototype.decode_intern_magic = function(buffer, op) {
       this.decode_list_like(buffer, op);
       break;
     }
+    case SMALL_BIG:
+      this.decode_small_big(buffer, op);
+      break;
+    default:
+      throw "Decoder doesn't support " + op.magic + "yet.";
   }
 }
 
@@ -598,6 +621,25 @@ Decoder.prototype.decode_binary = function(buffer, op) {
   for(; op.current < op.length; op.current++) {
     this.read(buffer, 1);
     op.value[op.current] = this.ShortView.getUint8(this.ShortIndex++);
+  }
+}
+
+Decoder.prototype.decode_small_big = function(buffer, op) {
+  if(op.length === undefined) {
+    op.length = this.decode_small_int(buffer);
+  }
+  if(op.sign === undefined) {
+    op.sign = this.decode_small_int(buffer);
+  }
+  if(!op.digits) {
+    op.digits = new Array(op.length);
+  } 
+  if(!op.current) {
+    op.current = 0;
+  } 
+  for(; op.current < op.length; op.current++) {
+    this.read(buffer, 1);
+    op.digits[op.current] = this.ShortView.getUint8(this.ShortIndex++);
   }
 }
 
