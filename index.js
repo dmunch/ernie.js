@@ -317,9 +317,9 @@ Encoder.prototype.bignum_to_bytes = function (Int) {
 	}
 };
 
-function Decoder(textDecoder) {
+function Decoder(textDecoder, shortSize) {
   this.TextDecoder = textDecoder;
-  this.ShortSize = 512; 
+  this.ShortSize = shortSize || 512; 
   this.ShortBuffer = new Uint8Array(this.ShortSize);
   this.ShortView = new DataView(this.ShortBuffer.buffer);
 
@@ -356,6 +356,10 @@ Decoder.prototype.decodeNext = function() {
   } catch(ex) {
     return {err: ex, value: undefined};
   }
+}
+
+Decoder.prototype.hasMoreTerms = function() {
+  return (this.ShortLength - this.ShortIndex > 0) || (this.Buffer.length - this.BufferIndex > 0);
 }
 
 Decoder.prototype.nextBuffer = function(buffer) {
@@ -696,7 +700,8 @@ Decoder.prototype.read = function(buffer, size) {
   }
 
   var length = Math.min(buffer.length - this.BufferIndex, emptySpace);
-  this.ShortBuffer.set(buffer.subarray(this.BufferIndex, length), this.ShortLength);
+  this.ShortBuffer.set(buffer.subarray(this.BufferIndex, this.BufferIndex + length), this.ShortLength);
+  
   this.BufferIndex += length;
 
   if(length == 0 && remainingSpace == 0) {
