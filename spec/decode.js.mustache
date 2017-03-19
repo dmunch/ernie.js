@@ -17,7 +17,7 @@ if(!TextDecoder) {
   };
 }
 
-describe("A suite", function() {
+describe("decoder", function() {
   {{ #tests }}
   it("{{ desc }}", function() {
     var decoder = new Bert.Decoder(new TextDecoder());
@@ -26,10 +26,19 @@ describe("A suite", function() {
   {{ /tests }}
 });
 
+describe("streaming decoder", function() {
+  {{ #tests }}
+  it("{{ desc }}", function() {
+    var decoder = new Bert.StreamingDecoder(new TextDecoder());
+    expect(decoder.decode(new Uint8Array({{ erl }}))).toEqual(eval(" {{ json }} "));
+  });
+  {{ /tests }}
+});
+
 describe("stream decoding a single term", function() {
   {{ #tests }}
   it("{{ desc }}", function() {
-    var decoder = new Bert.Decoder(new TextDecoder());
+    var decoder = new Bert.StreamingDecoder(new TextDecoder());
     var buffer = new Uint8Array({{ erl }});
 
     var chunkSize = Math.floor(buffer.length / 3);
@@ -53,7 +62,7 @@ describe("stream decoding a single term", function() {
 
 describe("stream decoding multiple terms", function() {
   it("should decode multiple terms from one stream", function() {
-    var decoder = new Bert.Decoder(new TextDecoder());
+    var decoder = new Bert.StreamingDecoder(new TextDecoder());
     var buffers = [
     {{ #tests }}
       new Uint8Array({{ erl }}),
@@ -79,7 +88,7 @@ describe("stream decoding multiple terms", function() {
 
 describe("stream decoding multiple terms chunked", function() {
   it("should decode multiple terms from one stream", function() {
-    var decoder = new Bert.Decoder(new TextDecoder());
+    var decoder = new Bert.StreamingDecoder(new TextDecoder());
     var buffers = [
     {{ #tests }}
       new Uint8Array({{ erl }}),
